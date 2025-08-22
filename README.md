@@ -8,7 +8,7 @@ A modern Next.js application built with Bun for optimal performance.
 - 🏃‍♂️ Bun runtime for fast package management and development
 - 🎨 Tailwind CSS for styling
 - 📝 TypeScript for type safety
-- 🔍 ESLint for code quality
+- 🚀 Biome for fast linting and formatting
 
 ## Getting Started
 
@@ -35,7 +35,9 @@ bun dev
 - `bun dev` - Start the development server
 - `bun build` - Build the application for production
 - `bun start` - Start the production server
-- `bun lint` - Run ESLint
+- `bun lint` - Run Biome linter
+- `bun format` - Format code with Biome
+- `bun check` - Run Biome linter and formatter together
 
 ## Project Structure
 
@@ -52,3 +54,4 @@ src/
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Bun Documentation](https://bun.sh/docs)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Biome Documentation](https://biomejs.dev/)

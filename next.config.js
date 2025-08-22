@@ -7,7 +7,8 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: false,
+    // Disable ESLint during builds since we're using Biome
+    ignoreDuringBuilds: true,
   },
 }
 
