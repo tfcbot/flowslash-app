@@ -4,7 +4,7 @@ A modern Next.js application built with Bun for optimal performance.
 
 ## Features
 
-- ⚡ Next.js 14 with App Router
+- ⚡ Next.js 15 with App Router
 - 🏃‍♂️ Bun runtime for fast package management and development
 - 🎨 Tailwind CSS for styling
 - 📝 TypeScript for type safety
