@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "biome lint .",
     "format": "biome format . --write",
-    "check": "biome check ."
+    "check": "biome check .",
+    "dev": "npm-run-all --parallel dev:frontend dev:backend",
+    "dev:frontend": "next dev",
+    "dev:backend": "convex dev",
+    "start:convex": "npx convex dev --local --once"
   },
   "dependencies": {
+    "convex": "^1.26.2",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
