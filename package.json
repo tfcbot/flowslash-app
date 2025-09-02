@@ -7,7 +7,7 @@
     "start": "next start",
     "dev:frontend": "next dev",
     "dev:backend": "CONVEX_AGENT_MODE=anonymous npx convex dev --once && CONVEX_AGENT_MODE=anonymous npx convex dev",
-    "dev": "npm run predev && npm-run-all --parallel dev:frontend dev:backend",
+    "dev": "npm-run-all --parallel dev:frontend dev:backend",
     "predev": "CONVEX_AGENT_MODE=anonymous npx convex dev --until-success",
     "lint": "biome lint .",
     "format": "biome format . --write",
