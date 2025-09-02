@@ -5,7 +5,7 @@
   "scripts": {
     "build": "next build",
     "start": "next start",
-    "dev": "next dev",
+    "dev": "CONVEX_AGENT_MODE=anonymous npx convex dev --once && next dev",
     "lint": "biome lint .",
     "format": "biome format . --write",
     "check": "biome check .",
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
+    "convex": "^1.26.2",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.5",
     "next": "^15.0.0",
