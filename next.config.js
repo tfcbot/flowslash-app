@@ -12,7 +12,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   allowedDevOrigins: [
-    '*',
+    '*', // Allow all origins for development
   ],
 }
 
