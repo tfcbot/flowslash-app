@@ -11,6 +11,9 @@ const nextConfig = {
     // Disable ESLint during builds since we're using Biome
     ignoreDuringBuilds: true,
   },
+  allowedDevOrigins: [
+    '*',
+  ],
 }
 
 module.exports = nextConfig
