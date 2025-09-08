@@ -1,51 +1,28 @@
 // src/app/api/users/route.ts
-import { NextResponse } from 'next/server'
-import { db } from '../../../db'
-import { usersTable, type NewUser } from '../../../schema'
-import { safeNeonOperation } from '../../../db/utils'
+import { NextResponse } from 'next/server';
+
+// Note: With InstantDB, most operations should be done client-side
+// These API routes are kept for compatibility but are not recommended
+// Consider using db.useQuery() and db.transact() directly in your components
 
 export async function GET() {
-  try {
-    const users = await safeNeonOperation(() => db().select().from(usersTable))
-
-    return NextResponse.json(users)
-  } catch (error) {
-    console.error('Error fetching users:', error)
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
-  }
+  return NextResponse.json(
+    {
+      message:
+        'Use InstantDB client-side queries instead. See db.useQuery(queries.allProfiles()) in your components.',
+      deprecated: true,
+    },
+    { status: 200 }
+  );
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-
-    // Validate required fields
-    if (!body.name || !body.email) {
-      return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
-    }
-
-    const newUser: NewUser = {
-      name: body.name,
-      email: body.email,
-      role: body.role || 'user',
-      metadata: body.metadata || null,
-      isActive: body.isActive ?? true,
-    }
-
-    const [createdUser] = await safeNeonOperation(() =>
-      db().insert(usersTable).values(newUser).returning()
-    )
-
-    return NextResponse.json(createdUser, { status: 201 })
-  } catch (error: unknown) {
-    console.error('Error creating user:', error)
-
-    // Handle unique constraint violations
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    if (errorMessage.includes('duplicate key value')) {
-      return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 })
-    }
-
-    return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
-  }
+export async function POST(_request: Request) {
+  return NextResponse.json(
+    {
+      message:
+        'Use InstantDB client-side transactions instead. See createProfile() utility function.',
+      deprecated: true,
+    },
+    { status: 200 }
+  );
 }

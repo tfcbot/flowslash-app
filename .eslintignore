@@ -1,0 +1,33 @@
+# Build outputs
+.next/**/*
+out/
+build/
+dist/
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env*
+
+# Generated files
+next-env.d.ts
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Other
+.DS_Store
+*.tsbuildinfo

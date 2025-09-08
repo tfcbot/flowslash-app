@@ -1,41 +1,63 @@
 // src/db.ts
-import { drizzle } from 'drizzle-orm/neon-http'
-import { neon } from '@neondatabase/serverless'
+import { init, id } from '@instantdb/react';
 
-// Create database connection function
-export function createDb() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is not defined')
-  }
+// Get app ID from environment
+const APP_ID = process.env.NEXT_PUBLIC_INSTANT_APP_ID;
 
-  // Create Neon SQL client - specific to Neon
-  const sql = neon(process.env.DATABASE_URL)
+// Client-side database instance
+export const db = init({
+  appId: APP_ID!,
+});
 
-  // Create Drizzle instance with neon-http adapter
-  return drizzle({ client: sql })
-}
+// Export id generator for convenience
+export { id };
 
-// Export db instance for use in API routes and server-side code
-export const db = createDb
+// Type exports for convenience
+export type { AppSchema } from '../instant.schema';
+export type User = {
+  id: string;
+  email: string;
+  profile?: {
+    id: string;
+    name: string;
+    role: string;
+    metadata?: any;
+    isActive: boolean;
+    createdAt: string | number;
+    updatedAt: string | number;
+  };
+};
 
-// Multi-branch setup utility
-const getBranchUrl = () => {
-  const env = process.env.NODE_ENV
-  if (env === 'development') {
-    return process.env.DEV_DATABASE_URL
-  }
-  if (env === 'test') {
-    return process.env.TEST_DATABASE_URL
-  }
-  return process.env.DATABASE_URL
-}
+export type Profile = {
+  id: string;
+  name: string;
+  role: string;
+  metadata?: any;
+  isActive: boolean;
+  createdAt: string | number;
+  updatedAt: string | number;
+  $user?: User;
+  authoredPosts?: Post[];
+  authoredComments?: Comment[];
+};
 
-// Alternative database instance for branch-specific operations
-export const branchDb = (() => {
-  const branchUrl = getBranchUrl()
-  if (branchUrl) {
-    const branchSql = neon(branchUrl)
-    return drizzle({ client: branchSql })
-  }
-  return db
-})()
+export type Post = {
+  id: string;
+  title: string;
+  content?: string;
+  status: string;
+  tags?: string[];
+  metadata?: any;
+  createdAt: string | number;
+  updatedAt: string | number;
+  author?: Profile;
+  comments?: Comment[];
+};
+
+export type Comment = {
+  id: string;
+  content: string;
+  createdAt: string | number;
+  post?: Post;
+  author?: Profile;
+};

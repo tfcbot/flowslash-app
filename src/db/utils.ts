@@ -1,113 +1,169 @@
 // src/db/utils.ts
-import { db } from '../db'
-import {
-  usersTable,
-  postsTable,
-  commentsTable,
-  type NewUser,
-  type NewPost,
-  type NewComment,
-} from '../schema'
-import { eq, sql } from 'drizzle-orm'
+import { db, id } from '../db';
 
-// Neon-specific error handling
-export async function safeNeonOperation<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation()
-  } catch (error: unknown) {
-    // Handle Neon-specific error codes
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    
-    if (errorMessage.includes('connection pool timeout')) {
-      console.error('Neon connection pool timeout')
-      // Handle appropriately - could implement retry logic
-      throw new Error('Database connection timeout. Please try again.')
-    }
+// Client-side utility functions for common operations
+// Note: With InstantDB, most operations can be done directly in components using db.transact and db.useQuery
 
-    if (errorMessage.includes('too many connections')) {
-      console.error('Neon connection limit reached')
-      throw new Error('Database is currently busy. Please try again.')
-    }
+// Helper function to create a new profile
+export function createProfile(profileData: {
+  name: string;
+  email: string;
+  role?: string;
+  metadata?: any;
+  isActive?: boolean;
+}) {
+  const now = Date.now();
+  const profileId = id();
+  const userId = id();
 
-    // Re-throw for other handling
-    throw error
-  }
+  return db.transact([
+    // Create user first
+    db.tx.$users[userId].update({
+      email: profileData.email,
+    }),
+    // Then create profile
+    db.tx.profiles[profileId].update({
+      name: profileData.name,
+      role: profileData.role || 'user',
+      metadata: profileData.metadata || null,
+      isActive: profileData.isActive ?? true,
+      createdAt: now,
+      updatedAt: now,
+    }),
+    // Link profile to user
+    db.tx.profiles[profileId].link({ $user: userId }),
+  ]);
 }
 
-// Batch operations optimized for Neon serverless
-export async function batchInsertUsers(users: NewUser[]) {
-  return safeNeonOperation(() => db().insert(usersTable).values(users).returning())
+// Helper function to update a profile
+export function updateProfile(
+  profileId: string,
+  updates: Partial<{
+    name: string;
+    role: string;
+    metadata: any;
+    isActive: boolean;
+  }>
+) {
+  return db.transact([
+    db.tx.profiles[profileId].update({
+      ...updates,
+      updatedAt: Date.now(),
+    }),
+  ]);
 }
 
-export async function batchInsertPosts(posts: NewPost[]) {
-  return safeNeonOperation(() => db().insert(postsTable).values(posts).returning())
+// Helper function to delete a profile
+export function deleteProfile(profileId: string) {
+  return db.transact([db.tx.profiles[profileId].delete()]);
 }
 
-// Prepared statements for repeated queries
-export const getUsersByRolePrepared = () =>
-  db().select().from(usersTable).where(sql`${usersTable.role} = $1`).prepare('get_users_by_role')
+// Helper function to create a post
+export function createPost(postData: {
+  title: string;
+  content?: string;
+  status?: string;
+  authorId: string;
+  tags?: string[];
+  metadata?: any;
+}) {
+  const now = Date.now();
+  const postId = id();
 
-export const getPostsByStatusPrepared = () =>
-  db()
-    .select()
-    .from(postsTable)
-    .where(sql`${postsTable.status} = $1`)
-    .prepare('get_posts_by_status')
-
-// Safe query functions with error handling
-export async function getUserSafely(id: number) {
-  return safeNeonOperation(() => db().select().from(usersTable).where(eq(usersTable.id, id)))
+  return db.transact([
+    db.tx.posts[postId].update({
+      title: postData.title,
+      content: postData.content || null,
+      status: postData.status || 'draft',
+      tags: postData.tags || null,
+      metadata: postData.metadata || null,
+      createdAt: now,
+      updatedAt: now,
+    }),
+    // Link post to author
+    db.tx.posts[postId].link({ author: postData.authorId }),
+  ]);
 }
 
-export async function getPostSafely(id: number) {
-  return safeNeonOperation(() => db().select().from(postsTable).where(eq(postsTable.id, id)))
+// Helper function to create a comment
+export function createComment(commentData: {
+  content: string;
+  postId: string;
+  authorId: string;
+}) {
+  const commentId = id();
+
+  return db.transact([
+    db.tx.comments[commentId].update({
+      content: commentData.content,
+      createdAt: Date.now(),
+    }),
+    // Link comment to post and author
+    db.tx.comments[commentId].link({
+      post: commentData.postId,
+      author: commentData.authorId,
+    }),
+  ]);
 }
 
-// Transaction example optimized for Neon
-export async function createUserWithPosts(user: NewUser, posts: NewPost[]) {
-  return safeNeonOperation(async () => {
-    return await db().transaction(async (tx) => {
-      const [newUser] = await tx.insert(usersTable).values(user).returning()
+// Query helpers (these return query objects to be used with db.useQuery)
+export const queries = {
+  // Get all profiles with their users
+  allProfiles: () => ({
+    profiles: {
+      $user: {},
+    },
+  }),
 
-      if (posts.length > 0) {
-        await tx.insert(postsTable).values(
-          posts.map((post) => ({
-            ...post,
-            userId: newUser.id,
-          }))
-        )
-      }
+  // Get a specific profile by ID
+  profileById: (profileId: string) => ({
+    profiles: {
+      $: {
+        where: {
+          id: profileId,
+        },
+      },
+      $user: {},
+      authoredPosts: {},
+      authoredComments: {},
+    },
+  }),
 
-      return newUser
-    })
-  })
-}
+  // Get posts by author
+  postsByAuthor: (authorId: string) => ({
+    posts: {
+      $: {
+        where: {
+          'author.id': authorId,
+        },
+      },
+      author: {},
+      comments: {
+        author: {},
+      },
+    },
+  }),
 
-// Complex query with joins optimized for Neon
-export async function getUsersWithPostCount() {
-  return safeNeonOperation(() =>
-    db()
-      .select({
-        id: usersTable.id,
-        name: usersTable.name,
-        email: usersTable.email,
-        role: usersTable.role,
-        postCount: sql<number>`count(${postsTable.id})`,
-      })
-      .from(usersTable)
-      .leftJoin(postsTable, eq(usersTable.id, postsTable.userId))
-      .groupBy(usersTable.id)
-  )
-}
+  // Search posts
+  searchPosts: (searchTerm: string) => ({
+    posts: {
+      $: {
+        where: {
+          or: [
+            { title: { $like: `%${searchTerm}%` } },
+            { content: { $like: `%${searchTerm}%` } },
+          ],
+        },
+      },
+      author: {},
+    },
+  }),
 
-// Full-text search example (Postgres feature supported by Neon)
-export async function searchPosts(searchTerm: string) {
-  return safeNeonOperation(() =>
-    db()
-      .select()
-      .from(postsTable)
-      .where(
-        sql`to_tsvector('english', ${postsTable.title} || ' ' || ${postsTable.content}) @@ plainto_tsquery('english', ${searchTerm})`
-      )
-  )
-}
+  // Get profiles with their posts for counting
+  profilesWithPosts: () => ({
+    profiles: {
+      $user: {},
+      authoredPosts: {},
+    },
+  }),
+};
