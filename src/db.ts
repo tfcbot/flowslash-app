@@ -1,13 +1,22 @@
 // src/db.ts
 import { init, id } from '@instantdb/react';
 
-// Get app ID from environment
+// Get app ID from environment (may be undefined in starter template)
 const APP_ID = process.env.NEXT_PUBLIC_INSTANT_APP_ID;
 
-// Client-side database instance
-export const db = init({
-  appId: APP_ID!,
-});
+// Initialize InstantDB only if an app id is provided; otherwise export a proxy
+// that throws a clear error when used. This avoids build/runtime crashes.
+export const db = APP_ID
+  ? init({ appId: APP_ID })
+  : new Proxy({} as any, {
+      get(_target, prop) {
+        const hint =
+          'InstantDB is not configured. Set NEXT_PUBLIC_INSTANT_APP_ID in .env.local to use `db.' +
+          String(prop) +
+          '`. The starter page works without it.';
+        throw new Error(hint);
+      },
+    });
 
 // Export id generator for convenience
 export { id };
